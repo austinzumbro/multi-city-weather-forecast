@@ -16,18 +16,39 @@ function getGeoCode(locationstring) {
       return response.json();
     })
     .then(function (data) {
-      // let lat = data[0].lat;
-      // let lon = data[0].lon;
-      return data;
+      let lat = data[0].lat;
+      let lon = data[0].lon;
+      getCurrentWeather(lat, lon);
+      get5DayForecast(lat, lon);
     });
+}
 
-  return geoCodeResponse;
+// Get current weather
+// This works
+function getCurrentWeather(lat, lon) {
+  let currentWeatherURL =
+    "https://api.openweathermap.org/data/2.5/weather?lat=" +
+    lat +
+    "&lon=" +
+    lon +
+    "&appid=" +
+    openWeatherMapAPI;
+
+  fetch(currentWeatherURL)
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (data) {
+      // This works!  TODO: populate the HTML
+      console.log("Current Weather Response\n*****************");
+      console.log(data);
+    });
 }
 
 // Get a 5-day forecast based on latitude and longitude
 function get5DayForecast(lat, lon) {
   let forecastURL =
-    "api.openweathermap.org/data/2.5/forecast?lat=" +
+    "http://api.openweathermap.org/data/2.5/forecast?lat=" +
     lat +
     "&lon=" +
     lon +
@@ -39,10 +60,38 @@ function get5DayForecast(lat, lon) {
       return response.json();
     })
     .then(function (data) {
-      return data;
+      let forecastList = data.list;
+      let forecastObject = {};
+      for (let i = 0; i < forecastList.length; i++) {
+        let date = forecastList[i].dt_txt;
+        date = date.split(" ")[0];
+        let temp = forecastList[i].main.temp;
+        let windSpeed = forecastList[i].wind.speed;
+        let humidity = forecastList[i].main.humidity;
+        if (!forecastObject.hasOwnProperty(date)) {
+          forecastObject[date] = {
+            tempArray: [temp],
+            windArray: [windSpeed],
+            humidityArray: [humidity],
+          };
+        } else {
+          forecastObject[date].tempArray.push(temp);
+          forecastObject[date].windArray.push(windSpeed);
+          forecastObject[date].humidityArray.push(humidity);
+        }
+      }
+      console.log(forecastObject);
     });
+}
 
-  return forecastResponse();
+function dedupeIntoObject(arr) {
+  let newObject = {};
+  for (let i = 0; i < arr.length; i++) {
+    if (!newObject.hasOwnProperty(arr[i])) {
+      newObject[arr[i]] = [];
+    }
+  }
+  return newObject;
 }
 
 // Construct the DOM
@@ -78,6 +127,7 @@ const colSearchFormInput = document.createElement("input");
 colSearchFormInput.setAttribute("class", "form-control mb-3 w-100");
 const colSearchFormSubmit = document.createElement("button");
 colSearchFormSubmit.setAttribute("class", "btn btn-primary mb-3 w-100");
+colSearchFormSubmit.setAttribute("id", "search-button");
 colSearchFormSubmit.textContent = "Search";
 
 colSearchForm.appendChild(colSearchFormH2);
@@ -111,3 +161,9 @@ sectionMain.appendChild(colWeather);
 
 body.appendChild(header);
 body.appendChild(sectionMain);
+
+colSearchFormSubmit.addEventListener("click", function (element) {
+  element.preventDefault();
+  let city = colSearchFormInput.value;
+  let geoCode = getGeoCode(city);
+});
