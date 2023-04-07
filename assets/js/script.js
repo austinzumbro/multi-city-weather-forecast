@@ -1,4 +1,31 @@
+// Helper functions
+//
+// Return the average of the values in an array
+// Currently used to average the every-3-hour response
+// from the 5-day forecast API
+function arrayAverage(arr) {
+  let sum = 0;
+  for (let i = 0; i < arr.length; i++) {
+    if (typeof arr[i] === "number") {
+      sum += arr[i];
+    }
+  }
+  return sum / arr.length;
+}
+
+// Take arrays stored in an object, average them, and
+// store the average in a new key.
+// Currently used while averaging the every-3-hour response
+// from the 5-day forecast API
+function avgForecastArrays(obj) {
+  for (let x in obj) {
+    let newKey = x + "Avg";
+    obj[newKey] = arrayAverage(obj[x]);
+  }
+}
+
 // Open Weather API
+//
 // API key for Open Weather Map
 // For future reference, keys like this shouldn't be stored in a public repository
 const openWeatherMapAPI = "e31abeb6338435ae6ad3ea19bb63561b";
@@ -79,6 +106,9 @@ function get5DayForecast(lat, lon) {
           forecastObject[date].windArray.push(windSpeed);
           forecastObject[date].humidityArray.push(humidity);
         }
+      }
+      for (let x in forecastObject) {
+        avgForecastArrays(forecastObject[x]);
       }
       console.log(forecastObject);
     });
