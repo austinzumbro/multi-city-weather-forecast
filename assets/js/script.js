@@ -2,7 +2,7 @@
 // Declare level elements
 const body = document.body;
 const header = document.createElement("header");
-header.setAttribute("class", "row p-3 text-bg-dark");
+header.setAttribute("class", "row p-3 text-bg-dark bg-gradient");
 
 const headerCol1 = document.createElement("div");
 const headerCol2 = document.createElement("div");
@@ -63,18 +63,19 @@ colWeather.setAttribute("class", "col-12 col-md-9 p-3");
 colWeather.setAttribute("id", "forecast-section");
 // Current weather
 const colWeatherCurrent = document.createElement("section");
-colWeatherCurrent.setAttribute("class", "container border");
+colWeatherCurrent.setAttribute("class", "container border p-3 mb-3 text-bg-light");
+colWeatherCurrent.innerHTML = "<h2>Weather will display here.</h2><p>Enter a city in the search bar, or select one of the past searches.</p>"
 const colWeatherCurrentH2 = document.createElement("h2");
 colWeatherCurrentH2.textContent = "Placeholder City Name and Date";
 const colWeatherCurrentStats = document.createElement("div");
-colWeatherCurrent.appendChild(colWeatherCurrentH2);
-colWeatherCurrent.appendChild(colWeatherCurrentStats);
 // 5-Day Forecast
 const colWeatherForecast = document.createElement("section");
-colWeatherForecast.setAttribute("class", "container");
+colWeatherForecast.setAttribute("class", "container py-3");
 const colWeatherForecastH2 = document.createElement("h3");
 colWeatherForecastH2.textContent = "5-Day Forecast:";
-colWeatherForecast.appendChild(colWeatherForecastH2);
+
+const colWeatherForecastCardRow = document.createElement("div");
+colWeatherForecastCardRow.setAttribute("class", "row");
 
 colWeather.appendChild(colWeatherCurrent);
 colWeather.appendChild(colWeatherForecast);
@@ -137,6 +138,11 @@ const openWeatherMapAPI = "e31abeb6338435ae6ad3ea19bb63561b";
 
 // Get a set of lat/lon values for a city name
 function getGeoCode(locationstring) {
+  colWeatherCurrent.innerHTML = "";
+  colWeatherForecast.innerHTML = "";
+  colWeatherForecastCardRow.innerHTML = "";
+  colWeatherCurrentStats.innerHTML = "";
+
   let geoCodeURL =
     "http://api.openweathermap.org/geo/1.0/direct?q=" +
     locationstring +
@@ -172,10 +178,7 @@ function getCurrentWeather(lat, lon) {
       return response.json();
     })
     .then(function (data) {
-      // This works!  TODO: populate the HTML
-      console.log("Current Weather Response\n*****************");
-      console.log(data);
-      let date = dayjs.unix(data.dt);
+      let date = dayjs.unix(data.dt + data.timezone);
       let day = date.format("M/D/YYYY");
       let name = data.name;
       let icon = data.weather[0].icon;
@@ -200,6 +203,8 @@ function getCurrentWeather(lat, lon) {
       colWeatherCurrentStats.appendChild(tempP);
       colWeatherCurrentStats.appendChild(windP);
       colWeatherCurrentStats.appendChild(humidityP);
+      colWeatherCurrent.appendChild(colWeatherCurrentH2);
+      colWeatherCurrent.appendChild(colWeatherCurrentStats);
     });
 }
 
@@ -222,32 +227,90 @@ function get5DayForecast(lat, lon) {
       let forecastList = data.list;
       let forecastObject = {};
       for (let i = 0; i < forecastList.length; i++) {
-        let date = forecastList[i].dt_txt;
-        let day = dayjs(date).format("M/D/YYYY");
-        let time = dayjs(date).format("ha");
-        let temp = forecastList[i].main.temp;
-        let windSpeed = forecastList[i].wind.speed;
-        let humidity = forecastList[i].main.humidity;
-        let icon = forecastList[i].weather[0].icon;
-        if (!forecastObject.hasOwnProperty(day)) {
-          forecastObject[day] = {
-            tempArray: [temp],
-            windArray: [windSpeed],
-            humidityArray: [humidity],
-            iconArray: [[time, icon]],
-          };
-        } else {
-          forecastObject[day].tempArray.push(temp);
-          forecastObject[day].windArray.push(windSpeed);
-          forecastObject[day].humidityArray.push(humidity);
-          forecastObject[day].iconArray.push([time, icon]);
+        let date = dayjs.unix(forecastList[i].dt);
+        let day = date.format("M/D/YYYY");
+        let today = dayjs().format("M/D/YYYY");
+        if (day !== today) {
+          let time = date.format("ha");
+          time = time.substring(0, time.length - 1);
+          let temp = forecastList[i].main.temp;
+          let windSpeed = forecastList[i].wind.speed;
+          let humidity = forecastList[i].main.humidity;
+          let icon = forecastList[i].weather[0].icon;
+          if (!forecastObject.hasOwnProperty(day)) {
+            forecastObject[day] = {
+              tempArray: [temp],
+              windArray: [windSpeed],
+              humidityArray: [humidity],
+              iconArray: [[time, icon]],
+            };
+          } else {
+            forecastObject[day].tempArray.push(temp);
+            forecastObject[day].windArray.push(windSpeed);
+            forecastObject[day].humidityArray.push(humidity);
+            forecastObject[day].iconArray.push([time, icon]);
+          }
         }
       }
       for (let x in forecastObject) {
         avgForecastArrays(forecastObject[x]);
       }
-      console.log(forecastObject);
+      constructCards(forecastObject);
     });
+}
+
+// Card constructor function
+function constructCards(obj) {
+  let cardHeaders = Object.keys(obj);
+  for (let i = 0; i < cardHeaders.length; i++) {
+    let key = cardHeaders[i];
+    let card = document.createElement("div");
+    card.setAttribute("class", "card custom-card py-2 m-2 text-bg-dark");
+
+    // Put the date in the header
+    let header = document.createElement("h3");
+    header.textContent = key;
+
+    // Create the table of times and icons
+    let iconTable = document.createElement("table");
+    let timeRow = document.createElement("tr");
+    let iconRow = document.createElement("tr");
+    let iconArray = obj[key].iconArray;
+    for (let j = 0; j < iconArray.length; j++) {
+      let timeCell = document.createElement("td");
+      timeCell.textContent = iconArray[j][0];
+      timeRow.appendChild(timeCell);
+      let iconCell = document.createElement("td");
+      iconCell.innerHTML =
+        "<img src='https://openweathermap.org/img/wn/" +
+        iconArray[j][1] +
+        ".png'>";
+      iconRow.appendChild(iconCell);
+    }
+    iconTable.appendChild(timeRow);
+    iconTable.appendChild(iconRow);
+
+    let temp = obj[key].tempArrayAvg;
+    let wind = obj[key].windArrayAvg;
+    let humidity = obj[key].humidityArrayAvg;
+
+    let tempP = document.createElement("p");
+    let windP = document.createElement("p");
+    let humidityP = document.createElement("p");
+
+    tempP.innerHTML = "Temp: " + temp + " &#176;F";
+    windP.innerHTML = "Wind: " + wind + " MPH";
+    humidityP.innerHTML = "Humidity: " + humidity + "%";
+
+    card.appendChild(header);
+    card.appendChild(iconTable);
+    card.appendChild(tempP);
+    card.appendChild(windP);
+    card.appendChild(humidityP);
+    colWeatherForecastCardRow.appendChild(card);
+    colWeatherForecast.appendChild(colWeatherForecastH2);
+    colWeatherForecast.appendChild(colWeatherForecastCardRow);
+  }
 }
 
 function dedupeIntoObject(arr) {
@@ -261,6 +324,7 @@ function dedupeIntoObject(arr) {
 }
 
 function buildPastSearchList(array) {
+  colSearchPastSearch.innerHTML = "";
   for (let i = 0; i < array.length; i++) {
     let cityButton = document.createElement("button");
     cityButton.setAttribute(
@@ -278,5 +342,16 @@ buildPastSearchList(initialCityList);
 colSearchFormSubmit.addEventListener("click", function (element) {
   element.preventDefault();
   let city = colSearchFormInput.value;
-  let geoCode = getGeoCode(city);
+  getGeoCode(city);
+  initialCityList.pop();
+  initialCityList.unshift(city);
+  buildPastSearchList(initialCityList);
+});
+
+colSearchPastSearch.addEventListener("click", function (event) {
+  let element = event.target;
+  if (element.getAttribute("data-attribute")) {
+    let city = element.getAttribute("data-attribute");
+    getGeoCode(city);
+  }
 });

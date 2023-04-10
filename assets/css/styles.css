@@ -1,8 +1,26 @@
 :root {
+  --purple: purple;
+}
+
+.custom-card {
+  width: 240px;
 }
 
 .icon {
   height: 40px;
   width: 40px;
   display: inline;
+}
+
+table {
+  margin: 12px 0px 20px 0px;
+}
+
+td {
+  max-width: 12px;
+  font-size: 12px;
+}
+
+td img {
+  max-width: 20px;
 }
