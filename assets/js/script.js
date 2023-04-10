@@ -1,5 +1,5 @@
 // Construct the DOM
-// Declare level elements
+// Declare elements
 const body = document.body;
 const header = document.createElement("header");
 header.setAttribute("class", "row p-3 text-bg-dark bg-gradient");
@@ -53,7 +53,6 @@ colSearchForm.appendChild(colSearchFormH2);
 colSearchForm.appendChild(colSearchFormInput);
 colSearchForm.appendChild(colSearchFormSubmit);
 colSearchRow.appendChild(colSearchForm);
-// colSearchRow.appendChild(colSearchHR);
 colSearchRow.appendChild(colSearchPastSearch);
 colSearch.appendChild(colSearchRow);
 
@@ -86,8 +85,7 @@ main.appendChild(colWeather);
 body.appendChild(header);
 body.appendChild(main);
 
-// Placeholder Information
-
+// 10 most-populated cities for page load
 let initialCityList = [
   "New York City",
   "Los Angeles",
@@ -101,7 +99,7 @@ let initialCityList = [
 ];
 
 // Helper functions
-//
+
 // Return the average of the values in an array
 // Currently used to average the every-3-hour response
 // from the 5-day forecast API
@@ -131,29 +129,33 @@ function avgForecastArrays(obj) {
 }
 
 // Open Weather API
-//
+
 // API key for Open Weather Map
 // For future reference, keys like this shouldn't be stored in a public repository
 const openWeatherMapAPI = "e31abeb6338435ae6ad3ea19bb63561b";
 
 // Get a set of lat/lon values for a city name
-function getGeoCode(locationstring) {
+function getWeatherData(locationstring) {
+  // Clear containers
   colWeatherCurrent.innerHTML = "";
   colWeatherForecast.innerHTML = "";
   colWeatherForecastCardRow.innerHTML = "";
   colWeatherCurrentStats.innerHTML = "";
 
+  // Construct the GeoCode API url
   let geoCodeURL =
     "http://api.openweathermap.org/geo/1.0/direct?q=" +
     locationstring +
     "&limit=1&appid=" +
     openWeatherMapAPI;
 
-  let geoCodeResponse = fetch(geoCodeURL)
+  // Get the GeoCode
+  fetch(geoCodeURL)
     .then(function (response) {
       return response.json();
     })
     .then(function (data) {
+      // Parse lat and lon, use them to get weather data
       let lat = data[0].lat;
       let lon = data[0].lon;
       getCurrentWeather(lat, lon);
@@ -162,8 +164,8 @@ function getGeoCode(locationstring) {
 }
 
 // Get current weather
-// This works
 function getCurrentWeather(lat, lon) {
+  // Construct the URL string
   let currentWeatherURL =
     "https://api.openweathermap.org/data/2.5/weather?lat=" +
     lat +
@@ -173,12 +175,15 @@ function getCurrentWeather(lat, lon) {
     openWeatherMapAPI +
     "&units=imperial";
 
+
   fetch(currentWeatherURL)
     .then(function (response) {
       return response.json();
     })
     .then(function (data) {
-      let date = dayjs.unix(data.dt + data.timezone);
+      // Parse data into variables, then append to page
+      // Convert date from unix
+      let date = dayjs.unix(data.dt);
       let day = date.format("M/D/YYYY");
       let name = data.name;
       let icon = data.weather[0].icon;
@@ -208,8 +213,9 @@ function getCurrentWeather(lat, lon) {
     });
 }
 
-// Get a 5-day forecast based on latitude and longitude
+// Get a 5-day forecast
 function get5DayForecast(lat, lon) {
+  // Build the URL string
   let forecastURL =
     "http://api.openweathermap.org/data/2.5/forecast?lat=" +
     lat +
@@ -224,12 +230,19 @@ function get5DayForecast(lat, lon) {
       return response.json();
     })
     .then(function (data) {
+      // Narrow in on the relevant data
       let forecastList = data.list;
+      // Because multiple sets of data are available
+      // for each day, initialize an object where we
+      // can store and average each day's data.
       let forecastObject = {};
       for (let i = 0; i < forecastList.length; i++) {
+        // Parse data and assign to variables
         let date = dayjs.unix(forecastList[i].dt);
         let day = date.format("M/D/YYYY");
         let today = dayjs().format("M/D/YYYY");
+        // Filter out data related to "today"
+        // We already have this information in Current Weather
         if (day !== today) {
           let time = date.format("ha");
           time = time.substring(0, time.length - 1);
@@ -237,6 +250,10 @@ function get5DayForecast(lat, lon) {
           let windSpeed = forecastList[i].wind.speed;
           let humidity = forecastList[i].main.humidity;
           let icon = forecastList[i].weather[0].icon;
+
+          // Construct the Object with days as keys
+          // If the "day as key" does not already exist,
+          // create it. If it does exist, update it.
           if (!forecastObject.hasOwnProperty(day)) {
             forecastObject[day] = {
               tempArray: [temp],
@@ -253,13 +270,15 @@ function get5DayForecast(lat, lon) {
         }
       }
       for (let x in forecastObject) {
+        // Iterate over the object and get relevant averages.
         avgForecastArrays(forecastObject[x]);
       }
+      // Build the cards and append them to the page.
       constructCards(forecastObject);
     });
 }
 
-// Card constructor function
+// Card constructor
 function constructCards(obj) {
   let cardHeaders = Object.keys(obj);
   for (let i = 0; i < cardHeaders.length; i++) {
@@ -313,16 +332,7 @@ function constructCards(obj) {
   }
 }
 
-function dedupeIntoObject(arr) {
-  let newObject = {};
-  for (let i = 0; i < arr.length; i++) {
-    if (!newObject.hasOwnProperty(arr[i])) {
-      newObject[arr[i]] = [];
-    }
-  }
-  return newObject;
-}
-
+// Build and append a list of buttons based on an array of cities.
 function buildPastSearchList(array) {
   colSearchPastSearch.innerHTML = "";
   for (let i = 0; i < array.length; i++) {
@@ -337,21 +347,27 @@ function buildPastSearchList(array) {
   }
 }
 
+// Execute the build.
 buildPastSearchList(initialCityList);
 
+// When the search form is submitted, get the weather data,
+// update the page, update the city array and rebuild the 
+// button list.
 colSearchFormSubmit.addEventListener("click", function (element) {
   element.preventDefault();
   let city = colSearchFormInput.value;
-  getGeoCode(city);
+  getWeatherData(city);
   initialCityList.pop();
   initialCityList.unshift(city);
   buildPastSearchList(initialCityList);
 });
 
+// When a "past search" is clicked, get the weather data and 
+// update the page.
 colSearchPastSearch.addEventListener("click", function (event) {
   let element = event.target;
   if (element.getAttribute("data-attribute")) {
     let city = element.getAttribute("data-attribute");
-    getGeoCode(city);
+    getWeatherData(city);
   }
 });
