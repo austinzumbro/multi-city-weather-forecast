@@ -126,6 +126,7 @@ To summarize, if the day does not exist as a key on the object, create it and po
 When it came time to average some of those numbers, I discovered that Javascript doesn't have a native method to average an array (at least not that I saw), so I wrote my own. I also didn't want to overwrite the source data, so I had to generate new keys at the same time.  On top of that, I didn't want to average out the icon data, so I had to put in a `typeof` filter.
 
 ```javascript
+// Average an array.
 function arrayAverage(arr) {
   let sum = 0;
   for (let i = 0; i < arr.length; i++) {
@@ -139,8 +140,10 @@ function arrayAverage(arr) {
   return roundedAverage;
 }
 
+// Save the average in a new key-value pair.
 function avgForecastArrays(obj) {
   for (let x in obj) {
+    // Only run on a list of numbers (specific to this app)
     if (typeof obj[x][0] === "number") {
       let newKey = x + "Avg";
       obj[newKey] = arrayAverage(obj[x]);
@@ -157,10 +160,9 @@ I found this project to be kind of a drag. I was pretty under the weather this w
 
 It was fun to play around with `fetch` and explore some of the nuances there. As I mentioned, I got into trouble with asynchronicity, so that was a nice puzzle to solve. And there is something very satisfying about sending off a request and getting back exactly what you expected.
 
-Some obvious improvements to this particular application would be...
-- Save the search history to localStorage. Right now it "saves" it for as long as you maintain session, but it resets to the default list on page load. I was planning to implement that this go-round, but I'll admit: I lost interest.
+Some improvements to this particular application would be...
 - Make the UI more fun and colorful. I used Bootstrap here, theoretically to speed things up, but I probably would have had more fun if I'd just written the CSS myself.
-- Make the experience more interactive. I don't know what that would be, but the ability to click around on stuff and get some kind of response would be nice.
+- Make the experience more interactive. I don't really know what that would look like, but the ability to click around on stuff would be nice.
 
 ---
 

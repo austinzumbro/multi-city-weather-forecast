@@ -98,6 +98,8 @@ let initialCityList = [
   "Dallas",
 ];
 
+let cityList = [];
+
 // Helper functions
 
 // Return the average of the values in an array
@@ -348,7 +350,14 @@ function buildPastSearchList(array) {
 }
 
 // Execute the build.
-buildPastSearchList(initialCityList);
+if (localStorage.getItem("cityList")) {
+  let pastData = localStorage.getItem("cityList");
+  cityList = JSON.parse(pastData);
+  buildPastSearchList(cityList);
+} else {
+  cityList = initialCityList;
+  buildPastSearchList(cityList);
+}
 
 // When the search form is submitted, get the weather data,
 // update the page, update the city array and rebuild the 
@@ -357,9 +366,10 @@ colSearchFormSubmit.addEventListener("click", function (element) {
   element.preventDefault();
   let city = colSearchFormInput.value;
   getWeatherData(city);
-  initialCityList.pop();
-  initialCityList.unshift(city);
-  buildPastSearchList(initialCityList);
+  cityList.pop();
+  cityList.unshift(city);
+  localStorage.setItem("cityList", JSON.stringify(cityList));
+  buildPastSearchList(cityList);
 });
 
 // When a "past search" is clicked, get the weather data and 
@@ -371,3 +381,6 @@ colSearchPastSearch.addEventListener("click", function (event) {
     getWeatherData(city);
   }
 });
+
+
+localStorage.setItem(JSON.stringify())
