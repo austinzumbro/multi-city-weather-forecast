@@ -1,4 +1,3 @@
-// Construct the DOM
 // Declare elements
 const body = document.body;
 const header = document.createElement("header");
@@ -146,7 +145,7 @@ function getWeatherData(locationstring) {
 
   // Construct the GeoCode API url
   let geoCodeURL =
-    "http://api.openweathermap.org/geo/1.0/direct?q=" +
+    "https://api.openweathermap.org/geo/1.0/direct?q=" +
     locationstring +
     "&limit=1&appid=" +
     openWeatherMapAPI;
@@ -219,7 +218,7 @@ function getCurrentWeather(lat, lon) {
 function get5DayForecast(lat, lon) {
   // Build the URL string
   let forecastURL =
-    "http://api.openweathermap.org/data/2.5/forecast?lat=" +
+    "https://api.openweathermap.org/data/2.5/forecast?lat=" +
     lat +
     "&lon=" +
     lon +
