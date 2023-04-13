@@ -383,4 +383,4 @@ colSearchPastSearch.addEventListener("click", function (event) {
 });
 
 
-localStorage.setItem(JSON.stringify())
+localStorage.setItem("cityList", JSON.stringify())
